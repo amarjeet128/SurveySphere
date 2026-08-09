@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  surveysphere-app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://nayakajay349_db_user:Amar123@ac-70ix3sq-shard-00-00.yxpni00.mongodb.net:27017,ac-70ix3sq-shard-00-01.yxpni00.mongodb.net:27017,ac-70ix3sq-shard-00-02.yxpni00.mongodb.net:27017/surveysphere?ssl=true&authSource=admin&replicaSet=atlas-4oq7u7-shard-0&appName=Cluster0
+      - JWT_SECRET=super_secret_production_key_2026
+    restart: unless-stopped

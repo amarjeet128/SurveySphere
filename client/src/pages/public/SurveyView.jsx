@@ -67,7 +67,7 @@ const SurveyView = () => {
     } else {
       const fetchSurvey = async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/surveys/code/${surveyId}`);
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/code/${surveyId}`);
           if (res.ok) {
             const data = await res.json();
             setSurvey(data);
@@ -501,7 +501,7 @@ const SurveyView = () => {
                       answer: responses[key]
                     }));
                     if (surveyId !== 'demo' && survey && !isPreview) {
-                      fetch(`http://localhost:5000/api/responses/${survey._id}`, {
+                      fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/responses/${survey._id}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

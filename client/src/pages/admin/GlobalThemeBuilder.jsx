@@ -33,7 +33,7 @@ const GlobalThemeBuilder = () => {
     const fetchGlobalTheme = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/api/auth/theme', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/auth/theme`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -103,7 +103,7 @@ const GlobalThemeBuilder = () => {
     setIsSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/users/theme', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/users/theme`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

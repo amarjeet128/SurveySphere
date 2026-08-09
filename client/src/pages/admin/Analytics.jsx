@@ -26,8 +26,8 @@ const Analytics = () => {
       try {
         const token = localStorage.getItem('token');
         const [resAnalytics, resSurveys] = await Promise.all([
-          fetch('http://localhost:5000/api/responses/analytics', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('http://localhost:5000/api/surveys', { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/responses/analytics`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         
         if (!resAnalytics.ok || !resSurveys.ok) throw new Error('Failed to fetch analytics or surveys');
@@ -51,7 +51,7 @@ const Analytics = () => {
     if (!window.confirm('Are you sure you want to delete this response?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/responses/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/responses/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

@@ -116,7 +116,7 @@ const ThemeBuilder = ({ theme, setTheme }) => {
         theme: theme
       };
 
-      const res = await fetch('http://localhost:5000/api/auth/theme', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/auth/theme`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

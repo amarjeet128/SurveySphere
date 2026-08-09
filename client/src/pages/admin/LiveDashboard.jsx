@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:5000');
+const socket = io(import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com');
 
 const LiveDashboard = () => {
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ const LiveDashboard = () => {
     const fetchPolls = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/api/surveys', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -58,7 +58,7 @@ const LiveDashboard = () => {
   const createLivePoll = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/surveys', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +91,7 @@ const LiveDashboard = () => {
     if (!window.confirm('Are you sure you want to delete this live poll?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/surveys/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -106,7 +106,7 @@ const LiveDashboard = () => {
   const startPoll = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/surveys/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -127,7 +127,7 @@ const LiveDashboard = () => {
     try {
       const pollToStop = polls.find(p => p._id === id);
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/surveys/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

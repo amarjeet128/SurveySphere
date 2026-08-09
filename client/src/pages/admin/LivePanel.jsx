@@ -16,7 +16,7 @@ import ContentEditableModule from 'react-contenteditable';
 
 const ContentEditable = ContentEditableModule.default || ContentEditableModule;
 
-const socket = io('http://localhost:5000');
+const socket = io(import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com');
 
 const COLORS = ['#6366f1', '#f43f5e', '#1e3a8a', '#10b981', '#f59e0b', '#8b5cf6'];
 
@@ -122,7 +122,7 @@ const LivePanel = () => {
     const fetchPoll = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:5000/api/surveys/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -316,7 +316,7 @@ const LivePanel = () => {
         showPercentage: slide.showPercentage || false
       }));
 
-      await fetch(`http://localhost:5000/api/surveys/${id}`, {
+      await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -417,7 +417,7 @@ const LivePanel = () => {
     try {
       const token = localStorage.getItem('token');
       if (isLive) {
-        await fetch(`http://localhost:5000/api/surveys/${id}`, {
+        await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ status: 'Ended' })
@@ -427,7 +427,7 @@ const LivePanel = () => {
         setIsEnded(true);
         setActiveTab('Results');
       } else {
-        await fetch(`http://localhost:5000/api/surveys/${id}`, {
+        await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ status: 'Active' })

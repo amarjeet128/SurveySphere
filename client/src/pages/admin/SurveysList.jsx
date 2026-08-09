@@ -13,7 +13,7 @@ const SurveysList = () => {
     const fetchSurveys = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/api/surveys', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -36,7 +36,7 @@ const SurveysList = () => {
   const updateStatus = async (id, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/surveys/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ const SurveysList = () => {
     }
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/surveys/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

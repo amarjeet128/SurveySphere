@@ -36,8 +36,8 @@ const Dashboard = () => {
       try {
         const token = localStorage.getItem('token');
         const [resSurveys, resAnalytics] = await Promise.all([
-          fetch('http://localhost:5000/api/surveys', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('http://localhost:5000/api/responses/analytics', { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/responses/analytics`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
 
         if (resSurveys.ok) {

@@ -42,7 +42,7 @@ const SurveyBuilder = () => {
       const fetchSurvey = async () => {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5000/api/surveys/${id}`, {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) {
@@ -63,7 +63,7 @@ const SurveyBuilder = () => {
       const fetchGlobalTheme = async () => {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch('http://localhost:5000/api/auth/theme', {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/auth/theme`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) {
@@ -181,7 +181,7 @@ const SurveyBuilder = () => {
     try {
       const token = localStorage.getItem('token');
       const payload = { title, questions, status, theme, settings: landing };
-      const url = surveyId ? `http://localhost:5000/api/surveys/${surveyId}` : 'http://localhost:5000/api/surveys';
+      const url = surveyId ? `${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${surveyId}` : `${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys`;
       const method = surveyId ? 'PUT' : 'POST';
 
       const res = await fetch(url, {

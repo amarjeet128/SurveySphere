@@ -152,12 +152,7 @@ app.get('/api', (req, res) => {
   res.send('SurveySphere API is running');
 });
 
-// Serve frontend in production
-const path = require('path');
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'public')));
-  app.get('/{*splat}', (req, res) => res.sendFile(path.resolve(__dirname, 'public', 'index.html')));
-}
+// Frontend serving has been removed. The frontend is hosted separately on Netlify.
 
 const PORT = process.env.PORT || 5000;
 

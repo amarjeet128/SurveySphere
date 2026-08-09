@@ -150,7 +150,7 @@ const SurveyView = () => {
   const currentQuestions = questions;
   const answeredCount = questions.filter(q => {
     const ans = responses[q.id];
-    if (q.type === 'matrix') return ans && q.rows.every(r => ans[r]);
+    if (q.type === 'matrix') return ans && (q.rows || []).every(r => ans[r]);
     return ans !== undefined && ans !== '';
   }).length;
   const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
@@ -211,7 +211,7 @@ const SurveyView = () => {
       const answer = responses[q.id];
       if (q.type === 'matrix') {
         if (!answer) return false;
-        return q.rows.every(r => answer[r]);
+        return (q.rows || []).every(r => answer[r]);
       }
       return !!answer;
     });
@@ -453,14 +453,14 @@ const SurveyView = () => {
                             <thead>
                               <tr>
                                 <th className={`p-3 border-b ${isDark ? 'border-white/10' : 'border-slate-200'}`}></th>
-                                {q.columns.map(col => <th key={col} className={`p-3 ${textMuted} border-b ${isDark ? 'border-white/10' : 'border-slate-200'} text-center font-medium text-sm`}>{col}</th>)}
+                                {(q.columns || []).map(col => <th key={col} className={`p-3 ${textMuted} border-b ${isDark ? 'border-white/10' : 'border-slate-200'} text-center font-medium text-sm`}>{col}</th>)}
                               </tr>
                             </thead>
                             <tbody>
-                              {q.rows.map(row => (
+                              {(q.rows || []).map(row => (
                                 <tr key={row} className={`border-b ${isDark ? 'border-white/5 hover:bg-white/5' : 'border-slate-300/30 hover:bg-white/40'} last:border-0 transition-colors`}>
                                   <td className={`p-3 ${textMain} font-medium text-base`}>{row}</td>
-                                  {q.columns.map(col => (
+                                  {(q.columns || []).map(col => (
                                     <td key={col} className="p-3 text-center">
                                       <input type="radio" name={`${q.id}-${row}`} className="w-5 h-5 cursor-pointer" style={{ accentColor: theme.primaryColor }} checked={responses[q.id]?.[row] === col} onChange={() => handleAnswer(col, q.id, row)} />
                                     </td>

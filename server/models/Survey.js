@@ -33,6 +33,8 @@ const surveySchema = new mongoose.Schema({
     type: { type: String },
     title: String,
     options: [String],
+    rows: [String],
+    columns: [String],
     required: Boolean,
     allowMultiple: { type: Boolean, default: false },
     showPercentage: { type: Boolean, default: false },

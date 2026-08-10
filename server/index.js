@@ -63,8 +63,9 @@ io.on('connection', (socket) => {
   socket.on('admin-slide-changed', ({ code, question }) => {
     if (liveStates[code] && liveStates[code].isActive) {
       liveStates[code].question = question;
-      liveStates[code].votes = {};
-      liveStates[code].responsesCount = 0;
+      if (!liveStates[code].votes[question.id]) {
+        liveStates[code].votes[question.id] = {};
+      }
       io.to(code).emit('live-state-update', liveStates[code]);
     }
   });
@@ -110,14 +111,20 @@ io.on('connection', (socket) => {
     if (state && state.isActive && state.question) {
       state.responsesCount = (state.responsesCount || 0) + 1;
       const type = state.question.type;
+      const qId = state.question.id || state.question.pollId; // fallback if id missing
+      
+      if (!state.votes[qId]) {
+        state.votes[qId] = {};
+      }
+      const slideVotes = state.votes[qId];
       
       if (type === 'scales') {
         try {
           const ratings = JSON.parse(answer);
           Object.entries(ratings).forEach(([optName, val]) => {
-            if (!state.votes[optName]) state.votes[optName] = { sum: 0, count: 0 };
-            state.votes[optName].sum += val;
-            state.votes[optName].count += 1;
+            if (!slideVotes[optName]) slideVotes[optName] = { sum: 0, count: 0 };
+            slideVotes[optName].sum += val;
+            slideVotes[optName].count += 1;
           });
         } catch(e) { console.error('Error parsing scales vote:', e); }
       } 
@@ -129,13 +136,13 @@ io.on('connection', (socket) => {
           
           order.forEach((optName, index) => {
             const points = numOptions - index;
-            state.votes[optName] = (state.votes[optName] || 0) + points;
+            slideVotes[optName] = (slideVotes[optName] || 0) + points;
           });
         } catch(e) { console.error('Error parsing ranking vote:', e); }
       }
       else {
         // multiple_choice, word_cloud, open_ended, qa, etc.
-        state.votes[answer] = (state.votes[answer] || 0) + 1;
+        slideVotes[answer] = (slideVotes[answer] || 0) + 1;
       }
 
       io.to(code).emit('live-state-update', state); // Update everyone in the room

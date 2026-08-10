@@ -135,15 +135,18 @@ const LivePanel = () => {
             const savedVotes = (data.status === 'Ended' && data.liveResults) ? data.liveResults.votes || {} : {};
             
             const mappedSlides = data.questions.map((q, idx) => {
+              const slideId = q.id || idx + 1;
               const qType = q.type || 'multiple_choice';
+              const slideVotes = savedVotes[slideId] || {};
+              
               return {
-                id: q.id || idx + 1,
+                id: slideId,
                 questionType: qType,
                 chartType: q.chartType || 'bar',
                 questionTitle: q.title || 'Untitled Slide',
                 options: (q.options || []).map((optName, i) => {
                   let val = 0;
-                  const rawVote = savedVotes[optName];
+                  const rawVote = slideVotes[optName];
                   if (qType === 'scales' && rawVote) {
                     val = rawVote.count > 0 ? Number((rawVote.sum / rawVote.count).toFixed(1)) : 0;
                   } else if (rawVote) {
@@ -165,12 +168,15 @@ const LivePanel = () => {
             
             // Also populate previewVotes for the split-screen view
             if (data.status === 'Ended' && data.liveResults && data.liveResults.votes) {
-                const firstSlideId = data.questions[0].id || 1;
-                const newVotes = {};
-                mappedSlides[0].options.forEach(opt => {
-                    newVotes[opt.id] = opt.value;
+                const allPreviewVotes = {};
+                mappedSlides.forEach(slide => {
+                    const slideVotesObj = {};
+                    slide.options.forEach(opt => {
+                        slideVotesObj[opt.id] = opt.value;
+                    });
+                    allPreviewVotes[slide.id] = slideVotesObj;
                 });
-                setPreviewVotes({ [firstSlideId]: newVotes });
+                setPreviewVotes(allPreviewVotes);
             }
           }
           if (data.status === 'Ended') {
@@ -243,11 +249,12 @@ const LivePanel = () => {
         
         setSlides(prevSlides => prevSlides.map(slide => {
           if (slide.id === activeSlideId) {
+            const rawSlideVotes = state.votes[slide.id] || {};
             return {
               ...slide,
               options: slide.options.map(opt => {
                 let val = 0;
-                const rawVote = state.votes[opt.name];
+                const rawVote = rawSlideVotes[opt.name];
                 
                 if (slide.questionType === 'scales' && rawVote) {
                   val = rawVote.count > 0 ? Number((rawVote.sum / rawVote.count).toFixed(1)) : 0;

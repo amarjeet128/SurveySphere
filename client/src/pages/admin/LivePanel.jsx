@@ -130,47 +130,52 @@ const LivePanel = () => {
           setPollName(data.title);
           setSurveyCode(data.surveyCode);
           if (data.questions && data.questions.length > 0) {
-            const mappedSlides = data.questions.map((q, idx) => ({
-              id: q.id || idx + 1,
-              questionType: q.type || 'multiple_choice',
-              chartType: q.chartType || 'bar',
-              questionTitle: q.title || 'Untitled Slide',
-              options: (q.options || []).map((opt, i) => ({
-                id: i + 1,
-                name: opt,
-                value: 0,
-                color: COLORS[i % COLORS.length]
-              })),
-              allowMultiple: q.allowMultiple || false,
-              showPercentage: q.showPercentage || false
-            }));
+            const savedVotes = (data.status === 'Ended' && data.liveResults) ? data.liveResults.votes || {} : {};
+            
+            const mappedSlides = data.questions.map((q, idx) => {
+              const qType = q.type || 'multiple_choice';
+              return {
+                id: q.id || idx + 1,
+                questionType: qType,
+                chartType: q.chartType || 'bar',
+                questionTitle: q.title || 'Untitled Slide',
+                options: (q.options || []).map((optName, i) => {
+                  let val = 0;
+                  const rawVote = savedVotes[optName];
+                  if (qType === 'scales' && rawVote) {
+                    val = rawVote.count > 0 ? Number((rawVote.sum / rawVote.count).toFixed(1)) : 0;
+                  } else if (rawVote) {
+                    val = rawVote;
+                  }
+                  return {
+                    id: i + 1,
+                    name: optName,
+                    value: val,
+                    color: COLORS[i % COLORS.length]
+                  };
+                }),
+                allowMultiple: q.allowMultiple || false,
+                showPercentage: q.showPercentage || false
+              };
+            });
             setSlides(mappedSlides);
             setActiveSlideId(mappedSlides[0].id);
+            
+            // Also populate previewVotes for the split-screen view
+            if (data.status === 'Ended' && data.liveResults && data.liveResults.votes) {
+                const firstSlideId = data.questions[0].id || 1;
+                const newVotes = {};
+                mappedSlides[0].options.forEach(opt => {
+                    newVotes[opt.id] = opt.value;
+                });
+                setPreviewVotes({ [firstSlideId]: newVotes });
+            }
           }
           if (data.status === 'Ended') {
             setIsEnded(true);
             setActiveTab('Results');
-            if (data.liveResults) {
-              if (data.liveResults.participants) {
-                setParticipants(data.liveResults.participants);
-              }
-              if (data.liveResults.votes && data.questions && data.questions.length > 0) {
-                // Map the saved votes (keyed by option name) to previewVotes format
-                const firstSlideId = data.questions[0].id || 1;
-                const newVotes = {};
-                const slide = mappedSlides[0];
-                Object.entries(data.liveResults.votes).forEach(([optName, val]) => {
-                  const opt = slide.options.find(o => o.name === optName);
-                  if (opt) {
-                    if (slide.questionType === 'scales') {
-                       newVotes[opt.id] = val.count > 0 ? Number((val.sum / val.count).toFixed(1)) : 0;
-                    } else {
-                       newVotes[opt.id] = val;
-                    }
-                  }
-                });
-                setPreviewVotes({ [firstSlideId]: newVotes });
-              }
+            if (data.liveResults && data.liveResults.participants) {
+              setParticipants(data.liveResults.participants);
             }
           }
         }

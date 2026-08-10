@@ -6,10 +6,11 @@ import {
   X, ChevronDown, Check, GripVertical, Settings2, Image as ImageIcon, Trash2,
   Bold, Italic, Underline, Strikethrough, Link as LinkIcon, MoreHorizontal,
   Sliders, ListOrdered, MessagesSquare, TrendingUp, Grid, MapPin, ListChecks,
-  ChevronLeft, ChevronRight, Minus, Users, CheckSquare
+  ChevronLeft, ChevronRight, Minus, Users, CheckSquare, QrCode
 } from 'lucide-react';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentEditableModule from 'react-contenteditable';
@@ -32,6 +33,7 @@ const LivePanel = () => {
   const [isLive, setIsLive] = useState(false);
   const [isEnded, setIsEnded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   
   // Refactored state: Array of slides
   const [slides, setSlides] = useState([
@@ -555,7 +557,11 @@ const LivePanel = () => {
             <button className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors">
               <Settings size={16} />
             </button>
-            <button className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors">
+            <button 
+              onClick={() => setShowQR(true)}
+              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors"
+              title="Share"
+            >
               <Share2 size={16} />
             </button>
           </div>
@@ -1879,6 +1885,57 @@ const LivePanel = () => {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* QR Code / Share Modal */}
+      <AnimatePresence>
+        {showQR && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+            onClick={() => setShowQR(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              className="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full relative flex flex-col items-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <button onClick={() => setShowQR(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full transition-colors">
+                <X size={16} />
+              </button>
+              
+              <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4">
+                <QrCode size={24} />
+              </div>
+              
+              <h2 className="text-xl font-bold text-slate-800 mb-1">Scan to Join</h2>
+              <p className="text-sm text-slate-500 mb-6 text-center">Participants can scan this QR code with their mobile device to instantly join the live poll.</p>
+              
+              <div className="p-4 bg-white border-2 border-slate-100 rounded-xl mb-6">
+                <QRCodeSVG value={`${window.location.origin}/live?code=${surveyCode}`} size={200} />
+              </div>
+
+              <div className="w-full">
+                <div className="text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider">Or share link</div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={`${window.location.origin}/live?code=${surveyCode}`}
+                    className="flex-1 bg-slate-50 border border-slate-200 text-slate-600 text-sm rounded-lg px-3 py-2 outline-none"
+                  />
+                  <button 
+                    onClick={() => navigator.clipboard.writeText(`${window.location.origin}/live?code=${surveyCode}`).then(() => alert('Copied!'))}
+                    className="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100 rounded-lg transition-colors"
+                    title="Copy Link"
+                  >
+                    <LinkIcon size={16} />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

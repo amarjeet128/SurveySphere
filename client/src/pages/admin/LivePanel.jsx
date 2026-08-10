@@ -800,8 +800,8 @@ const LivePanel = () => {
                     const heightPercent = (displayValue / maxDisplayValue) * 100;
                     
                     return (
-                      <div key={item.id} className="flex flex-col items-center w-full max-w-[150px] h-full justify-end relative group">
-                        <span className="text-2xl font-semibold text-gray-800 mb-2">{displayValue}</span>
+                      <div key={item.id} className="flex flex-col items-center w-full max-w-[150px] h-full justify-end relative group cursor-default">
+                        <span className="text-2xl font-semibold text-gray-800 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">{displayValue}</span>
                         <div 
                           className="w-full rounded-t-sm mb-4 transition-all duration-700 ease-out shadow-sm origin-bottom" 
                           style={{ backgroundColor: item.color, height: animateIn ? `${heightPercent}%` : '0%', minHeight: animateIn ? '4px' : '0px' }}
@@ -836,7 +836,7 @@ const LivePanel = () => {
                           ))}
                         </div>
                         <div className="flex flex-col items-center gap-1 mt-4">
-                          <span className="text-xl font-bold text-gray-800">{displayValue}</span>
+                          <span className="text-xl font-bold text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300">{displayValue}</span>
                           <span className="text-base text-gray-500 font-medium truncate w-full px-2 text-center">{item.name}</span>
                         </div>
                       </div>
@@ -901,7 +901,7 @@ const LivePanel = () => {
                         return (
                           <div 
                             key={item.id} 
-                            className="absolute left-0 w-full flex items-end gap-4 transition-all duration-700 ease-in-out" 
+                            className="absolute left-0 w-full flex items-end gap-4 transition-all duration-700 ease-in-out group cursor-default" 
                             style={{ transform: `translateY(${rankIndex * 80}px)`, top: 0 }}
                           >
                             <span className="text-2xl font-bold text-gray-500 w-8 text-right shrink-0 mb-2">{rankIndex + 1}.</span>
@@ -909,9 +909,13 @@ const LivePanel = () => {
                                <div className="absolute top-[-26px] left-0 text-[16px] text-gray-600 font-medium z-10 transition-all">{item.name}</div>
                                <div className="w-full h-full bg-gray-50 rounded-r-xl relative overflow-hidden">
                                  <div 
-                                   className="absolute top-0 left-0 h-full rounded-r-xl transition-all duration-700 ease-in-out"
+                                   className="absolute top-0 left-0 h-full rounded-r-xl transition-all duration-700 ease-in-out flex items-center justify-end px-3"
                                    style={{ width: `${Math.max(percent, 2)}%`, backgroundColor: item.color }}
-                                 />
+                                 >
+                                   <span className="text-white font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md">
+                                     {val} pts
+                                   </span>
+                                 </div>
                                </div>
                             </div>
                           </div>
@@ -930,7 +934,7 @@ const LivePanel = () => {
                       const val = (!isLive && !isEnded && item.value === 0) ? (i === 0 ? 3.5 : i === 1 ? 4.5 : 1.0) : item.value;
                       const percent = (val / 5) * 100;
                       return (
-                        <div key={item.id} className="w-full relative">
+                        <div key={item.id} className="w-full relative group cursor-default">
                           <div className="text-gray-500 text-[15px] mb-1">{item.name || `Statement ${i+1}`}</div>
                           <div className="w-full relative h-14 flex items-center pb-1">
                             {/* The Mountain Distribution */}
@@ -952,7 +956,7 @@ const LivePanel = () => {
                               
                               {/* The Bubble */}
                               <div 
-                                className="absolute -translate-x-1/2 w-[26px] h-[26px] rounded-full flex items-center justify-center text-white text-[11px] font-bold shadow-sm transition-all duration-500 ring-2 ring-white"
+                                className="absolute -translate-x-1/2 w-[26px] h-[26px] rounded-full flex items-center justify-center text-white text-[11px] font-bold shadow-sm transition-all duration-500 ring-2 ring-white opacity-0 group-hover:opacity-100 duration-300"
                                 style={{ left: `${percent}%`, backgroundColor: item.color }}
                               >
                                 {val.toFixed(1)}

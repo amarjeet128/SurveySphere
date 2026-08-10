@@ -694,55 +694,11 @@ const LivePanel = () => {
           </div>
           )}
 
-          {/* Results Tab View */}
-          {activeTab === 'Results' ? (
-            <div className="w-full max-w-4xl mt-6">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center">
-                      <Users size={18} className="text-indigo-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-gray-800">Participants</h3>
-                      <p className="text-xs text-gray-400">{participants.length} joined</p>
-                    </div>
-                  </div>
-                  {isLive && (
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      Live
-                    </span>
-                  )}
-                </div>
-                {participants.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4">
-                      <Users size={28} className="text-gray-300" />
-                    </div>
-                    <p className="text-gray-500 font-medium">No participants yet</p>
-                    <p className="text-gray-400 text-sm mt-1">Participants will appear here once they join.</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-50">
-                    {participants.map((name, idx) => (
-                      <div key={idx} className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50/50 transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                          {name.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="text-sm font-medium text-gray-800">{name}</span>
-                        <span className="ml-auto text-xs text-gray-400">#{idx + 1}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-          <div className="w-full max-w-4xl min-h-[400px] max-h-[85vh] aspect-[16/9] bg-white rounded-xl shadow-md border border-gray-100 relative flex flex-col p-6 md:p-10 overflow-hidden mt-auto mb-auto">
+          {/* Canvas always renders, even in Results tab, so admin can see slide chart */}
+          <div className="w-full max-w-4xl min-h-[400px] max-h-[85vh] aspect-[16/9] bg-white rounded-xl shadow-md border border-gray-100 relative flex flex-col p-6 md:p-10 overflow-hidden mt-auto shrink-0">
             
             {/* Ended Lock Overlay */}
-            {isEnded && (
+            {(isEnded && activeTab === 'Create') && (
               <div className="absolute inset-0 z-10 bg-white/70 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-xl">
                 <div className="bg-white border border-gray-200 shadow-xl rounded-2xl px-8 py-6 text-center">
                   <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
@@ -1045,6 +1001,53 @@ const LivePanel = () => {
               <LayoutGrid size={18} />
             </button>
           )}
+          
+          {/* Results Tab View - Participants List below Canvas */}
+          {activeTab === 'Results' && (
+            <div className="w-full max-w-4xl mt-8 mb-12 shrink-0">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center">
+                      <Users size={18} className="text-indigo-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-800">Participants</h3>
+                      <p className="text-xs text-gray-400">{participants.length} joined</p>
+                    </div>
+                  </div>
+                  {isLive && (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Live
+                    </span>
+                  )}
+                </div>
+                {participants.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4">
+                      <Users size={28} className="text-gray-300" />
+                    </div>
+                    <p className="text-gray-500 font-medium">No participants yet</p>
+                    <p className="text-gray-400 text-sm mt-1">Participants will appear here once they join.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {participants.map((name, idx) => (
+                      <div key={idx} className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50/50 transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                          {name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-sm font-medium text-gray-800">{name}</span>
+                        <span className="ml-auto text-xs text-gray-400">#{idx + 1}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
         </main>
 
         {/* Right Sidebar (Properties) */}

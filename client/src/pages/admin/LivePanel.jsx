@@ -214,6 +214,7 @@ const LivePanel = () => {
         code: surveyCode,
         question: {
           pollId: id,
+          id: currentSlide.id,
           pollName,
           title: currentSlide.questionTitle,
           options: (currentSlide.options || []).map(o => o.name),
@@ -243,7 +244,7 @@ const LivePanel = () => {
         setIsLive(true);
         setIsEnded(false);
       }
-      if (isLive && state.isActive && activeSlide && state.question.title === activeSlide.questionTitle) {
+      if (state.isActive && activeSlide && state.question.title === activeSlide.questionTitle) {
         const newPreviewVotes = { ...previewVotes };
         const slideVotes = {};
         
@@ -452,6 +453,7 @@ const LivePanel = () => {
           code: surveyCode,
           question: {
             pollId: id,
+            id: currentSlide.id,
             pollName,
             title: currentSlide.questionTitle,
             options: (currentSlide.options || []).map(o => o.name),

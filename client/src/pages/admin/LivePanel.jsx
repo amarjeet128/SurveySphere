@@ -810,13 +810,13 @@ const LivePanel = () => {
             </div>
 
             {/* Custom Clean Chart Visualization matching Mentimeter */}
-            <div className="flex-1 w-full flex items-end justify-center pb-4 pt-6 min-h-0 overflow-hidden">
+            <div className="flex-1 w-full flex flex-col items-center pb-4 pt-6 min-h-0 overflow-hidden">
               
               {/* --- MULTIPLE CHOICE VISUALIZATIONS --- */}
               {activeSlide.questionType === 'multiple_choice' && (
                 <>
                   {(previewChartType || activeSlide.chartType) === 'bar' && (
-                    <div className="w-4/5 h-[200px] flex justify-around items-end gap-8">
+                    <div className="w-4/5 h-[200px] flex justify-around items-end gap-8 mt-auto">
                   {activeSlide.options.map((item, i) => {
                     const displayValue = (!isLive && !isEnded && item.value === 0) ? (i * 2 + 3) : item.value;
                     const maxDisplayValue = Math.max(...activeSlide.options.map((o, idx) => (!isLive && !isEnded && o.value === 0) ? (idx * 2 + 3) : o.value), 1);
@@ -837,7 +837,7 @@ const LivePanel = () => {
               )}
 
               {(previewChartType || activeSlide.chartType) === 'dots' && (
-                <div className="w-4/5 h-[250px] flex justify-around items-end gap-8">
+                <div className="w-4/5 h-[250px] flex justify-around items-end gap-8 mt-auto">
                   {activeSlide.options.map((item, i) => {
                     const displayValue = (!isLive && !isEnded && item.value === 0) ? (i * 2 + 3) : item.value;
                     const balls = Array.from({ length: displayValue });
@@ -869,7 +869,7 @@ const LivePanel = () => {
               )}
 
               {((previewChartType || activeSlide.chartType) === 'donut' || (previewChartType || activeSlide.chartType) === 'pie') && (
-                <div className="w-full h-full max-h-[300px] aspect-square relative flex items-center justify-center mx-auto mt-auto">
+                <div className="w-full h-full max-h-[300px] aspect-square relative flex items-center justify-center mx-auto my-auto">
                   <div className="w-full h-[250px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPie>
@@ -906,7 +906,7 @@ const LivePanel = () => {
 
               {/* --- RANKING VISUALIZATION --- */}
               {activeSlide.questionType === 'ranking' && (
-                <div className="w-full flex flex-col justify-center px-10 pb-8 space-y-4">
+                <div className="w-full flex flex-col justify-center px-10 pb-8 space-y-4 my-auto">
                   <div className="w-full relative" style={{ height: `${activeSlide.options.length * 80}px` }}>
                     {(() => {
                       const sortedItems = [...activeSlide.options].map((opt, i) => ({
@@ -947,7 +947,7 @@ const LivePanel = () => {
 
               {/* --- SCALES VISUALIZATION --- */}
               {activeSlide.questionType === 'scales' && (
-                <div className="w-full flex flex-col justify-center px-10 pb-8">
+                <div className="w-full flex flex-col justify-center px-10 pb-8 mt-auto">
                   <div className="space-y-5 w-full">
                     {activeSlide.options.map((item, i) => {
                       const val = (!isLive && !isEnded && item.value === 0) ? (i === 0 ? 3.5 : i === 1 ? 4.5 : 1.0) : item.value;
@@ -1410,12 +1410,12 @@ const LivePanel = () => {
                 </div>
 
                 {/* Chart Visualizations (Presentation Scale) */}
-                <div className="flex-1 w-full flex items-end justify-center pb-8 pt-10">
+                <div className="flex-1 w-full flex flex-col items-center pb-8 pt-10 min-h-0">
                   
                   {activeSlide.questionType === 'multiple_choice' && (
                     <>
                       {activeSlide.chartType === 'bar' && (
-                        <div className="w-4/5 h-[300px] flex justify-around items-end gap-12">
+                        <div className="w-4/5 h-[300px] flex justify-around items-end gap-12 mt-auto">
                           {activeSlide.options.map((item) => {
                             const currentSlideVotes = previewVotes[activeSlideId] || {};
                             const displayValue = currentSlideVotes[item.id] || 0;
@@ -1438,7 +1438,7 @@ const LivePanel = () => {
                       )}
 
                       {activeSlide.chartType === 'dots' && (
-                        <div className="w-4/5 h-[300px] flex justify-around items-end gap-12">
+                        <div className="w-4/5 h-[300px] flex justify-around items-end gap-12 mt-auto">
                           {activeSlide.options.map((item) => {
                             const currentSlideVotes = previewVotes[activeSlideId] || {};
                             const displayValue = currentSlideVotes[item.id] || 0;
@@ -1472,7 +1472,7 @@ const LivePanel = () => {
                       )}
 
                       {(activeSlide.chartType === 'donut' || activeSlide.chartType === 'pie') && (
-                        <div className="w-full flex flex-col items-center justify-center pt-8">
+                        <div className="w-full flex flex-col items-center justify-center my-auto">
                           <div className="w-full h-[320px] relative">
                             {Object.values(previewVotes[activeSlideId] || {}).reduce((a, b) => a + b, 0) === 0 ? (
                               <div className="absolute inset-0 flex items-center justify-center">
@@ -1516,7 +1516,7 @@ const LivePanel = () => {
                   )}
 
                   {activeSlide.questionType === 'scales' && (
-                    <div className="w-full flex flex-col justify-center px-16 pb-4">
+                    <div className="w-full flex flex-col justify-center px-16 pb-4 my-auto">
                       <div className="space-y-12 w-full">
                         {activeSlide.options.map((item, i) => {
                           const currentSlideVotes = previewVotes[activeSlideId] || {};
@@ -1564,9 +1564,9 @@ const LivePanel = () => {
                     </div>
                   )}
 
-                  {/* --- PREVIEW RANKING --- */}                  {/* --- PREVIEW RANKING --- */}
+                  {/* --- PREVIEW RANKING --- */}
                   {activeSlide.questionType === 'ranking' && (
-                    <div className="w-full flex flex-col justify-center px-10 pb-8 space-y-4">
+                    <div className="w-full flex flex-col justify-center px-16 pb-8 space-y-4 my-auto">
                       <div className="w-full relative" style={{ height: `${activeSlide.options.length * 80}px` }}>
                         {(() => {
                           const currentSlideVotes = previewVotes[activeSlideId] || {};

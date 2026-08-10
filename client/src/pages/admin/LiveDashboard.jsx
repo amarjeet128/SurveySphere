@@ -80,7 +80,7 @@ const LiveDashboard = () => {
   };
 
   const handleCopy = (code, id) => {
-    navigator.clipboard.writeText(`http://localhost:5173/live?code=${code}`)
+    navigator.clipboard.writeText(`${window.location.origin}/live?code=${code}`)
       .then(() => {
         setCopiedId(id);
         setTimeout(() => setCopiedId(null), 2000);
@@ -250,7 +250,7 @@ const LiveDashboard = () => {
                         {copiedId === poll._id ? <Copy size={16} /> : <LinkIcon size={16} />}
                       </button>
                       <button 
-                        onClick={() => setShowQR(`http://localhost:5173/live?code=${poll.surveyCode}`)}
+                        onClick={() => setShowQR(`${window.location.origin}/live?code=${poll.surveyCode}`)}
                         className="p-2 rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
                         title="Show QR Code"
                       >

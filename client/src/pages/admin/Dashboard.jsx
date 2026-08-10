@@ -21,7 +21,7 @@ const Dashboard = () => {
   const [copiedId, setCopiedId] = useState(null);
 
   const handleCopy = (code, id) => {
-    navigator.clipboard.writeText(`http://localhost:5173/s/${code}`)
+    navigator.clipboard.writeText(`${window.location.origin}/s/${code}`)
       .then(() => {
         setCopiedId(id);
         setTimeout(() => setCopiedId(null), 2000);
@@ -112,7 +112,7 @@ const Dashboard = () => {
                   <div className="flex items-center gap-2">
                     {survey.surveyCode && (
                       <>
-                        <button onClick={() => setShowQR(`http://localhost:5173/s/${survey.surveyCode}`)} className="p-2 text-slate-400 hover:text-indigo-600 bg-white hover:bg-slate-200 rounded-lg transition-all" title="Share via QR">
+                        <button onClick={() => setShowQR(`${window.location.origin}/s/${survey.surveyCode}`)} className="p-2 text-slate-400 hover:text-indigo-600 bg-white hover:bg-slate-200 rounded-lg transition-all" title="Share via QR">
                           <QrCode size={18} />
                         </button>
                         <button onClick={() => handleCopy(survey.surveyCode, survey._id)} className="p-2 text-slate-400 hover:text-indigo-600 bg-white hover:bg-slate-200 rounded-lg transition-all" title="Copy Link">

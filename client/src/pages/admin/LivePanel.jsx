@@ -304,6 +304,7 @@ const LivePanel = () => {
         code: surveyCode,
         question: {
           pollId: id,
+          id: currentSlide.id,
           pollName,
         title: currentSlide.questionTitle,
         options: (currentSlide.options || []).map(o => o.name),
@@ -820,7 +821,7 @@ const LivePanel = () => {
                     
                     return (
                       <div key={item.id} className="flex flex-col items-center justify-end w-full max-w-[150px] relative group h-full">
-                        <div className="flex-1 w-full flex flex-wrap-reverse justify-center content-start gap-1.5 overflow-visible">
+                        <div id={`dot-stack-base-${item.id}`} className="flex-1 w-full flex flex-wrap-reverse justify-center content-start gap-1.5 overflow-visible">
                           {balls.map((_, ballIndex) => (
                             <div 
                               key={ballIndex}

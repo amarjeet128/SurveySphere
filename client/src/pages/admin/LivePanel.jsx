@@ -976,7 +976,6 @@ const LivePanel = () => {
               </button>
             </div>
           </div>
-          )} {/* End of Create/Results ternary */}
           
           {isLive ? (
             <>

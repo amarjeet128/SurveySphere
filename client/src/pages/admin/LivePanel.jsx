@@ -6,7 +6,7 @@ import {
   X, ChevronDown, Check, GripVertical, Settings2, Image as ImageIcon, Trash2,
   Bold, Italic, Underline, Strikethrough, Link as LinkIcon, MoreHorizontal,
   Sliders, ListOrdered, MessagesSquare, TrendingUp, Grid, MapPin, ListChecks,
-  ChevronLeft, ChevronRight, Minus, Users
+  ChevronLeft, ChevronRight, Minus, Users, CheckSquare
 } from 'lucide-react';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';

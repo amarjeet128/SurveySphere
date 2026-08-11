@@ -258,6 +258,9 @@ const LivePanel = () => {
       if (state.participants) {
         setParticipants(state.participants);
       }
+      if (state.participantsData) {
+        setParticipantsData(state.participantsData);
+      }
       if (state.responsesCount !== undefined) {
         setResponsesCount(state.responsesCount);
       }

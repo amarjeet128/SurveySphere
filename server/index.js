@@ -99,7 +99,6 @@ io.on('connection', (socket) => {
     if (liveStates[code]) {
       liveStates[code].isActive = false;
       liveStates[code].isEnded = true;
-      io.to(code).emit('live-state-update', liveStates[code]);
 
       try {
         const Survey = require('./models/Survey');
@@ -125,12 +124,16 @@ io.on('connection', (socket) => {
           return a.avgTime - b.avgTime;
         });
 
+        liveStates[code].participantsData = participantsData;
+        io.to(code).emit('live-state-update', liveStates[code]);
+
         await Survey.findOneAndUpdate(
           { surveyCode: code },
           { $set: { liveResults: { participants: state.participants, participantsData, votes: state.votes } } }
         );
       } catch (e) {
         console.error('Failed to save live poll results:', e);
+        io.to(code).emit('live-state-update', liveStates[code]);
       }
     }
   });

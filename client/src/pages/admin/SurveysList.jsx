@@ -132,6 +132,20 @@ const SurveysList = () => {
                     Loading surveys...
                   </td>
                 </tr>
+              ) : surveys.filter(s => (s.title || '').toLowerCase().includes(search.toLowerCase())).length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="p-12 text-center text-slate-500 bg-white rounded-b-xl border-t border-slate-100">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                        <svg className="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <p className="text-base font-medium text-slate-600 mb-1">No surveys found</p>
+                      <p className="text-sm text-slate-400">Click 'Create Survey' to get started!</p>
+                    </div>
+                  </td>
+                </tr>
               ) : surveys.filter(s => (s.title || '').toLowerCase().includes(search.toLowerCase())).map((survey, i) => (
                 <motion.tr 
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}

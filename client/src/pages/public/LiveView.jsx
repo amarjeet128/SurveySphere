@@ -227,7 +227,7 @@ const LiveView = () => {
 
   const handleVote = (answer) => {
     if (!hasVoted && liveState.isActive && code) {
-      socket.emit('submit-vote', { code, answer });
+      socket.emit('submit-vote', { code, answer, name: participantName });
       setVotedQuestionTitle(liveState.question.title);
       sessionStorage.setItem('live_voted_title', liveState.question.title);
     }
@@ -316,27 +316,39 @@ const LiveView = () => {
           <motion.div 
             key={liveState.question?.title || 'voting'}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-            className="w-full max-w-xl"
+            className={`w-full ${liveState.question?.imageUrl ? 'max-w-5xl flex flex-col md:flex-row gap-8 md:gap-12 items-center' : 'max-w-xl'}`}
           >
-            <div className="mb-4 inline-block bg-indigo-50 border border-indigo-100 px-4 py-1.5 rounded-full text-indigo-700 font-semibold text-sm">
-              {liveState.question?.pollName || 'Live Poll'}
-            </div>
-            <h2 
-              className="text-2xl md:text-3xl font-bold text-slate-900 mb-8 leading-tight rich-text"
-              dangerouslySetInnerHTML={{ __html: liveState.question?.title || '' }}
-            />
+            <div className={`w-full ${liveState.question?.imageUrl ? 'md:w-1/2' : ''}`}>
+              <div className="mb-4 inline-block bg-indigo-50 border border-indigo-100 px-4 py-1.5 rounded-full text-indigo-700 font-semibold text-sm">
+                {liveState.question?.pollName || 'Live Poll'}
+              </div>
+              <h2 
+                className="text-2xl md:text-3xl font-bold text-slate-900 mb-8 leading-tight rich-text"
+                dangerouslySetInnerHTML={{ __html: liveState.question?.title || '' }}
+              />
 
-            {!hasVoted ? renderQuestionInput() : (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                className="bg-white p-12 rounded-3xl text-center border border-slate-100 shadow-sm"
-              >
-                <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30">
-                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">Answer Recorded!</h3>
-                <p className="text-slate-400">Look at the presenter's screen for real-time results.</p>
-              </motion.div>
+              {!hasVoted ? renderQuestionInput() : (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white p-12 rounded-3xl text-center border border-slate-100 shadow-sm"
+                >
+                  <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30">
+                    <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Answer Recorded!</h3>
+                  <p className="text-slate-400">Look at the presenter's screen for real-time results.</p>
+                </motion.div>
+              )}
+            </div>
+
+            {liveState.question?.imageUrl && (
+              <div className="w-full md:w-1/2 flex justify-center">
+                <img 
+                  src={`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}${liveState.question.imageUrl}`} 
+                  alt="Question Visual" 
+                  className="max-w-full max-h-[50vh] object-contain rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100" 
+                />
+              </div>
             )}
           </motion.div>
         )}

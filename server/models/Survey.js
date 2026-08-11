@@ -39,6 +39,8 @@ const surveySchema = new mongoose.Schema({
     allowMultiple: { type: Boolean, default: false },
     showPercentage: { type: Boolean, default: false },
     chartType: { type: String, default: 'bar' },
+    imageUrl: { type: String },
+    correctAnswer: { type: String }
   }],
   theme: {
     primaryColor: { type: String, default: '#6366f1' },
@@ -69,6 +71,11 @@ const surveySchema = new mongoose.Schema({
   },
   liveResults: {
     participants: [String],
+    participantsData: [{
+      name: String,
+      avgTime: Number,       // avg seconds per question
+      correctAnswers: Number // for future use
+    }],
     votes: {
       type: Map,
       of: mongoose.Schema.Types.Mixed

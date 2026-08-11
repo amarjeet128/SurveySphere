@@ -198,6 +198,18 @@ const LiveDashboard = () => {
             <tbody>
               {loading ? (
                 <tr><td colSpan="7" className="p-8 text-center text-slate-500">Loading live polls...</td></tr>
+              ) : polls.filter(p => p.title.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="p-12 text-center text-slate-500 bg-white rounded-b-xl border-t border-slate-100">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                        <Radio size={24} className="text-slate-300" />
+                      </div>
+                      <p className="text-base font-medium text-slate-600 mb-1">No live polls found</p>
+                      <p className="text-sm text-slate-400">Click 'Create Live Poll' to get started!</p>
+                    </div>
+                  </td>
+                </tr>
               ) : polls.filter(p => p.title.toLowerCase().includes(search.toLowerCase())).map((poll, i) => (
                 <motion.tr 
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}

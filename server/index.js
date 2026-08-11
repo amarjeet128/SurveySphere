@@ -5,7 +5,9 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const surveyRoutes = require('./routes/surveyRoutes');
 const responseRoutes = require('./routes/responseRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -20,7 +22,7 @@ const io = new Server(server, {
 connectDB();
 
 // Security Middleware
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
@@ -36,6 +38,10 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/surveys', surveyRoutes);
 app.use('/api/responses', responseRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Socket.io Logic
 const liveStates = {}; // Dictionary to hold state per poll code
@@ -55,7 +61,21 @@ io.on('connection', (socket) => {
 
   // Admin events
   socket.on('admin-start-poll', ({ code, question }) => {
-    liveStates[code] = { isActive: true, isEnded: false, question, votes: {}, participants: [], responsesCount: 0 };
+    const existingParticipants = liveStates[code]?.participants || [];
+    const existingParticipantData = liveStates[code]?.participantData || {};
+    const existingSeenSlides = liveStates[code]?.slidesSeen || new Set();
+
+    liveStates[code] = {
+      isActive: true,
+      isEnded: false,
+      question,
+      votes: {},
+      participants: existingParticipants,
+      participantData: existingParticipantData, // tracks { name: { joinedAt, lastVoteAt, slideCount } }
+      slidesSeen: existingSeenSlides,
+      responsesCount: 0,
+      totalSlides: question.totalSlides || 1
+    };
     socket.join(code); // Admin also joins the room
     io.to(code).emit('live-state-update', liveStates[code]);
   });
@@ -63,6 +83,11 @@ io.on('connection', (socket) => {
   socket.on('admin-slide-changed', ({ code, question }) => {
     if (liveStates[code] && liveStates[code].isActive) {
       liveStates[code].question = question;
+      // Track total slides seen
+      const seenSlides = liveStates[code].slidesSeen || new Set();
+      seenSlides.add(question.id);
+      liveStates[code].slidesSeen = seenSlides;
+      liveStates[code].totalSlides = seenSlides.size;
       if (!liveStates[code].votes[question.id]) {
         liveStates[code].votes[question.id] = {};
       }
@@ -78,9 +103,31 @@ io.on('connection', (socket) => {
 
       try {
         const Survey = require('./models/Survey');
+        const state = liveStates[code];
+        const totalSlides = state.totalSlides || 1;
+
+        // Build participantsData with avgTime
+        const participantsData = Object.entries(state.participantData || {}).map(([name, data]) => {
+          const totalSeconds = data.lastVoteAt
+            ? (data.lastVoteAt - data.joinedAt) / 1000
+            : null;
+          const avgTime = totalSeconds !== null ? Math.round((totalSeconds / totalSlides) * 10) / 10 : null;
+          return { name, avgTime, correctAnswers: data.correctAnswersCount || 0 };
+        });
+
+        // Sort by correct answers (desc), then avgTime (asc)
+        participantsData.sort((a, b) => {
+          if (b.correctAnswers !== a.correctAnswers) {
+            return b.correctAnswers - a.correctAnswers;
+          }
+          if (a.avgTime === null) return 1;
+          if (b.avgTime === null) return -1;
+          return a.avgTime - b.avgTime;
+        });
+
         await Survey.findOneAndUpdate(
           { surveyCode: code },
-          { $set: { liveResults: { participants: liveStates[code].participants, votes: liveStates[code].votes } } }
+          { $set: { liveResults: { participants: state.participants, participantsData, votes: state.votes } } }
         );
       } catch (e) {
         console.error('Failed to save live poll results:', e);
@@ -96,9 +143,17 @@ io.on('connection', (socket) => {
 
   // Participant events
   socket.on('participant-joined', ({ code, name }) => {
-    if (liveStates[code] && name) {
+    if (code && name) {
+      if (!liveStates[code]) {
+        liveStates[code] = { isActive: false, isEnded: false, question: null, votes: {}, participants: [], participantData: {} };
+      }
+      if (!liveStates[code].participants) liveStates[code].participants = [];
+      
       if (!liveStates[code].participants.includes(name)) {
         liveStates[code].participants.push(name);
+        // Track join timestamp
+        if (!liveStates[code].participantData) liveStates[code].participantData = {};
+        liveStates[code].participantData[name] = { joinedAt: Date.now(), lastVoteAt: null };
         io.to(code).emit('live-state-update', liveStates[code]);
       } else {
         socket.emit('live-state-update', liveStates[code]);
@@ -106,10 +161,19 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('submit-vote', ({ code, answer }) => {
+  socket.on('submit-vote', ({ code, answer, name }) => {
     const state = liveStates[code];
     if (state && state.isActive && state.question) {
       state.responsesCount = (state.responsesCount || 0) + 1;
+
+      // Track last vote timestamp and correct answers
+      if (name && state.participantData && state.participantData[name]) {
+        state.participantData[name].lastVoteAt = Date.now();
+        if (state.question.correctAnswer && answer === state.question.correctAnswer) {
+          state.participantData[name].correctAnswersCount = (state.participantData[name].correctAnswersCount || 0) + 1;
+        }
+      }
+
       const type = state.question.type;
       const qId = state.question.id || state.question.pollId; // fallback if id missing
       

@@ -21,6 +21,13 @@ const socket = io(import.meta.env.VITE_API_URL || 'https://surveysphere-backend-
 
 const COLORS = ['#6366f1', '#f43f5e', '#1e3a8a', '#10b981', '#f59e0b', '#8b5cf6'];
 
+export const getProperImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('data:')) return url;
+  if (url.startsWith('http')) return url;
+  return `${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}${url}`;
+};
+
 const LivePanel = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -1100,7 +1107,7 @@ const LivePanel = () => {
             {/* Split Screen Image for Question Slides */}
             {(activeSlide.imageUrl && activeSlide.questionType !== 'thankyou') && (
               <div className="w-full md:w-1/2 h-64 md:h-full pt-6 md:pt-0 md:pl-6 relative flex items-center justify-center border-t md:border-t-0 md:border-l border-gray-100 shrink-0">
-                <img src={`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}${activeSlide.imageUrl}`} alt="Slide visual" className="max-w-full max-h-full object-contain rounded-xl shadow-sm" />
+                <img src={getProperImageUrl(activeSlide.imageUrl)} alt="Slide visual" className="max-w-full max-h-full object-contain rounded-xl shadow-sm" />
               </div>
             )}
 
@@ -1648,7 +1655,7 @@ const LivePanel = () => {
                   ) : (
                     <div className="space-y-2 mt-2">
                       <div className="w-full h-32 rounded-lg bg-gray-100 overflow-hidden relative border border-gray-200 group">
-                        <img src={`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}${activeSlide.imageUrl}`} className="w-full h-full object-cover" alt="Slide content" />
+                        <img src={getProperImageUrl(activeSlide.imageUrl)} className="w-full h-full object-cover" alt="Slide content" />
                         <button
                           onClick={() => {
                             const newSlides = slides.map(s => s.id === activeSlide.id ? { ...s, imageUrl: null } : s);
@@ -2152,7 +2159,7 @@ const LivePanel = () => {
                 {/* Split Screen Image for Preview */}
                 {(activeSlide.imageUrl && activeSlide.questionType !== 'thankyou') && (
                   <div className="w-full md:w-1/2 h-64 md:h-full pt-6 md:pt-0 md:pl-6 relative flex items-center justify-center border-t md:border-t-0 md:border-l border-gray-100 shrink-0">
-                    <img src={`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}${activeSlide.imageUrl}`} alt="Slide visual" className="max-w-full max-h-full object-contain rounded-xl shadow-sm" />
+                    <img src={getProperImageUrl(activeSlide.imageUrl)} alt="Slide visual" className="max-w-full max-h-full object-contain rounded-xl shadow-sm" />
                   </div>
                 )}
 

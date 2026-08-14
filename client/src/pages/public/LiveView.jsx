@@ -6,6 +6,13 @@ import { Radio, GripVertical } from 'lucide-react';
 
 const socket = io(import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com');
 
+const getProperImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('data:')) return url;
+  if (url.startsWith('http')) return url;
+  return `${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}${url}`;
+};
+
 // ─── Per-Type Participant Input Components ──────────────────────────────────
 
 const MultipleChoiceInput = ({ options, onSubmit }) => (
@@ -344,7 +351,7 @@ const LiveView = () => {
             {liveState.question?.imageUrl && (
               <div className="w-full md:w-1/2 flex justify-center">
                 <img 
-                  src={`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}${liveState.question.imageUrl}`} 
+                  src={getProperImageUrl(liveState.question.imageUrl)} 
                   alt="Question Visual" 
                   className="max-w-full max-h-[50vh] object-contain rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100" 
                 />

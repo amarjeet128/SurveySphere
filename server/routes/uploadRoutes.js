@@ -6,19 +6,7 @@ const { protect } = require('../middleware/authMiddleware');
 
 const fs = require('fs');
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, '../uploads/');
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
   storage: storage,
@@ -38,8 +26,10 @@ router.post('/', protect, upload.single('image'), (req, res) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
     
-    // Return relative path. Frontend will prepend the backend API URL.
-    const fileUrl = `/uploads/${req.file.filename}`;
+    // Convert buffer to base64 string
+    const base64Image = req.file.buffer.toString('base64');
+    const fileUrl = `data:${req.file.mimetype};base64,${base64Image}`;
+    
     res.status(200).json({ url: fileUrl });
   } catch (error) {
     console.error('Upload Error:', error);

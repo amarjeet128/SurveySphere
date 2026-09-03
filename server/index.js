@@ -4,6 +4,7 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const surveyRoutes = require('./routes/surveyRoutes');
+const livePollRoutes = require('./routes/livePollRoutes');
 const responseRoutes = require('./routes/responseRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const http = require('http');
@@ -38,6 +39,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/surveys', surveyRoutes);
+app.use('/api/livepolls', livePollRoutes);
 app.use('/api/responses', responseRoutes);
 app.use('/api/upload', uploadRoutes);
 
@@ -102,7 +104,7 @@ io.on('connection', (socket) => {
       liveStates[code].isEnded = true;
 
       try {
-        const Survey = require('./models/Survey');
+        const LivePoll = require('./models/LivePoll');
         const state = liveStates[code];
         const totalSlides = state.totalSlides || 1;
 
@@ -128,7 +130,7 @@ io.on('connection', (socket) => {
         liveStates[code].participantsData = participantsData;
         io.to(code).emit('live-state-update', liveStates[code]);
 
-        await Survey.findOneAndUpdate(
+        await LivePoll.findOneAndUpdate(
           { surveyCode: code },
           { $set: { liveResults: { participants: state.participants, participantsData, votes: state.votes } } }
         );
@@ -215,6 +217,31 @@ io.on('connection', (socket) => {
 
       io.to(code).emit('live-state-update', state); // Update everyone in the room
       io.to(code).emit('vote-animation', { answer, type }); // Trigger animation
+    }
+  });
+
+  socket.on('chat-message', ({ code, sender, text }) => {
+    if (code && sender && text) {
+      if (!liveStates[code]) {
+        liveStates[code] = { isActive: false, isEnded: false, question: null, votes: {}, participants: [], participantData: {}, chatMessages: [] };
+      }
+      if (!liveStates[code].chatMessages) {
+        liveStates[code].chatMessages = [];
+      }
+      const message = { id: Date.now().toString(), sender, text, timestamp: new Date() };
+      liveStates[code].chatMessages.push(message);
+      // Keep only last 50 messages to prevent memory bloat
+      if (liveStates[code].chatMessages.length > 50) {
+        liveStates[code].chatMessages.shift();
+      }
+      io.to(code).emit('live-state-update', liveStates[code]);
+    }
+  });
+
+  socket.on('emoji-reaction', ({ code, emoji }) => {
+    if (code && emoji) {
+      // Just broadcast the reaction directly so clients can animate it instantly
+      io.to(code).emit('emoji-reaction-received', { emoji, timestamp: Date.now() });
     }
   });
 

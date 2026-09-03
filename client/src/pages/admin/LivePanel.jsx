@@ -6,7 +6,7 @@ import {
   X, ChevronDown, Check, GripVertical, Settings2, Image as ImageIcon, Trash2,
   Bold, Italic, Underline, Strikethrough, Link as LinkIcon, MoreHorizontal,
   Sliders, ListOrdered, MessagesSquare, TrendingUp, Grid, MapPin, ListChecks,
-  ChevronLeft, ChevronRight, Minus, Users, CheckSquare, QrCode, Trophy, Award, Clock, Star
+  ChevronLeft, ChevronRight, Minus, Users, CheckSquare, QrCode, Trophy, Award, Clock, Star, Smile, Radio
 } from 'lucide-react';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -43,6 +43,8 @@ const LivePanel = () => {
   const [showQR, setShowQR] = useState(false);
   const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
   const [showWinners, setShowWinners] = useState(false);
+  const [isWaitingRoomModalOpen, setIsWaitingRoomModalOpen] = useState(false);
+  const [waitingRoom, setWaitingRoom] = useState({ enabled: false, template: 'default' });
 
   // Refactored state: Array of slides
   const [slides, setSlides] = useState([
@@ -151,13 +153,14 @@ const LivePanel = () => {
     const fetchPoll = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
           const data = await res.json();
           setPollName(data.title);
           setSurveyCode(data.surveyCode);
+          if (data.waitingRoom) setWaitingRoom(data.waitingRoom);
           if (data.questions && data.questions.length > 0) {
             const savedVotes = (data.status === 'Ended' && data.liveResults) ? data.liveResults.votes || {} : {};
 
@@ -183,12 +186,14 @@ const LivePanel = () => {
                     id: i + 1,
                     name: optName,
                     value: val,
+                    voteCount: (qType === 'scales' && rawVote) ? rawVote.count : 0,
                     color: COLORS[i % COLORS.length]
                   };
                 }),
                 allowMultiple: q.allowMultiple || false,
                 showPercentage: q.showPercentage || false,
                 imageUrl: q.imageUrl || null,
+                imageProps: q.imageProps || null,
                 correctAnswer: q.correctAnswer || null
               };
             });
@@ -252,7 +257,10 @@ const LivePanel = () => {
           options: (currentSlide.options || []).map(o => o.name),
           type: currentSlide.questionType,
           chartType: currentSlide.chartType,
-          allowMultiple: currentSlide.allowMultiple || false
+          allowMultiple: currentSlide.allowMultiple || false,
+          imageUrl: currentSlide.imageUrl || null,
+          imageProps: currentSlide.imageProps || null,
+          correctAnswer: currentSlide.correctAnswer || null
         }
       });
       setIsLive(true);
@@ -301,7 +309,8 @@ const LivePanel = () => {
                 slideVotes[opt.id] = val;
                 return {
                   ...opt,
-                  value: val
+                  value: val,
+                  voteCount: (slide.questionType === 'scales' && rawVote) ? rawVote.count : (opt.voteCount || 0)
                 };
               })
             };
@@ -346,6 +355,8 @@ const LivePanel = () => {
           type: currentSlide.questionType,
           chartType: currentSlide.chartType,
           allowMultiple: currentSlide.allowMultiple || false,
+          imageUrl: currentSlide.imageUrl || null,
+          imageProps: currentSlide.imageProps || null,
           correctAnswer: currentSlide.correctAnswer || null
         }
       });
@@ -367,10 +378,11 @@ const LivePanel = () => {
         allowMultiple: slide.allowMultiple || false,
         showPercentage: slide.showPercentage || false,
         imageUrl: slide.imageUrl || '',
+        imageProps: slide.imageProps || null,
         correctAnswer: slide.correctAnswer || ''
       }));
 
-      await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
+      await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -378,7 +390,8 @@ const LivePanel = () => {
         },
         body: JSON.stringify({
           title: pollName,
-          questions: questionsToSave
+          questions: questionsToSave,
+          waitingRoom
         })
       });
       // Could show a toast here
@@ -449,7 +462,7 @@ const LivePanel = () => {
 
 
   const updateActiveSlide = (updates) => {
-    setSlides(slides.map(slide => slide.id === activeSlideId ? { ...slide, ...updates } : slide));
+    setSlides(prev => prev.map(slide => slide.id === activeSlideId ? { ...slide, ...updates } : slide));
   };
 
   const handleNewSlide = () => {
@@ -471,7 +484,7 @@ const LivePanel = () => {
     try {
       const token = localStorage.getItem('token');
       if (isLive) {
-        await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
+        await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ status: 'Ended' })
@@ -481,7 +494,7 @@ const LivePanel = () => {
         setIsEnded(true);
         setActiveTab('Results');
       } else {
-        await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
+        await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ status: 'Active' })
@@ -499,6 +512,7 @@ const LivePanel = () => {
             type: currentSlide.questionType,
             chartType: currentSlide.chartType,
             allowMultiple: currentSlide.allowMultiple || false,
+            imageProps: currentSlide.imageProps || null,
             correctAnswer: currentSlide.correctAnswer || null
           }
         });
@@ -552,6 +566,7 @@ const LivePanel = () => {
     },
     {
       group: 'Content slides', items: [
+        { id: 'blank', name: 'Blank Slide', icon: LayoutTemplate, color: 'text-purple-500' },
         { id: 'thankyou', name: 'Thank You Slide', icon: CheckSquare, color: 'text-green-500' },
       ]
     },
@@ -670,6 +685,12 @@ const LivePanel = () => {
               >
                 <MonitorPlay size={16} /> Preview
               </button>
+              <button
+                onClick={() => setIsWaitingRoomModalOpen(true)}
+                className="hidden md:flex px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-full transition-colors items-center gap-2 whitespace-nowrap shrink-0"
+              >
+                <Clock size={16} /> Waiting Screen
+              </button>
               <div className="flex rounded-full overflow-hidden shadow-sm shrink-0">
                 <button onClick={handleStartPresentation} className={`px-2 py-1.5 md:px-4 md:py-1.5 text-white text-xs md:text-sm font-medium transition-colors flex items-center gap-1 md:gap-2 whitespace-nowrap ${isLive ? 'bg-red-500 hover:bg-red-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
                   <Play size={14} fill="currentColor" /> <span className="hidden sm:inline">{isLive ? 'Stop presentation' : 'Start presentation'}</span><span className="inline sm:hidden">{isLive ? 'Stop' : 'Start'}</span>
@@ -761,39 +782,39 @@ const LivePanel = () => {
 
           {/* Canvas always renders, even in Results tab, so admin can see slide chart */}
           <div
-            className="w-full max-w-4xl min-h-[400px] md:aspect-[16/9] bg-white rounded-xl shadow-md border-0 relative flex flex-col md:flex-row p-2 md:p-4 overflow-y-auto overflow-x-hidden md:overflow-hidden mt-auto shrink-0"
+            className="w-full max-w-4xl min-h-[400px] md:aspect-[16/9] bg-white rounded-xl shadow-md border-0 relative flex flex-col md:flex-row p-2 md:p-4 overflow-y-auto overflow-x-hidden mt-auto shrink-0 custom-scrollbar"
             onMouseMove={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               if (resizingImage) {
                 const newWidth = e.clientX - rect.left - resizingImage.imgX;
                 const newHeight = e.clientY - rect.top - resizingImage.imgY;
-                setSlideImages(prev => ({
-                  ...prev,
-                  [resizingImage.slideId]: (prev[resizingImage.slideId] || []).map(img =>
-                    img.id === resizingImage.imageId ? { ...img, w: Math.max(50, newWidth), h: Math.max(50, newHeight) } : img
-                  )
-                }));
+                if (resizingImage.isTitle) {
+                  updateActiveSlide({ titleProps: { ...(activeSlide.titleProps || {}), width: Math.max(100, newWidth), height: Math.max(50, newHeight) } });
+                } else if (resizingImage.isPrimary) {
+                  updateActiveSlide({ imageProps: { ...(activeSlide.imageProps || {}), width: Math.max(50, newWidth), height: Math.max(50, newHeight) } });
+                }
                 return;
               }
               if (!draggingImage) return;
               const newX = e.clientX - rect.left - draggingImage.offsetX;
               const newY = e.clientY - rect.top - draggingImage.offsetY;
-              setSlideImages(prev => ({
-                ...prev,
-                [draggingImage.slideId]: (prev[draggingImage.slideId] || []).map(img =>
-                  img.id === draggingImage.imageId ? { ...img, x: newX, y: newY } : img
-                )
-              }));
+              if (draggingImage.isTitle) {
+                updateActiveSlide({ titleProps: { ...(activeSlide.titleProps || {}), x: newX, y: newY } });
+              } else if (draggingImage.isPrimary) {
+                updateActiveSlide({ imageProps: { ...(activeSlide.imageProps || {}), x: newX, y: newY } });
+              }
             }}
             onMouseUp={() => { setDraggingImage(null); setResizingImage(null); }}
             onMouseLeave={() => { setDraggingImage(null); setResizingImage(null); }}
           >
 
-            <div className={`flex flex-col relative h-full min-w-0 ${(activeSlide.imageUrl && activeSlide.questionType !== 'thankyou') ? 'w-full md:w-1/2 pb-6 md:pb-0 md:pr-6 shrink-0' : 'w-full z-10 shrink-0'}`}>
+            <div className="flex flex-col relative h-full min-w-0 w-full z-10 shrink-0 pointer-events-none">
+              {/* Added pointer-events-none to let drags pass through, but re-enable for children */}
+              <div className="pointer-events-none h-full flex flex-col">
 
               {/* Ended Lock Overlay */}
               {(isEnded && activeTab === 'Create') && (
-                <div className="absolute inset-0 z-10 bg-white/70 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-xl">
+                <div className="absolute inset-0 z-10 bg-white/70 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-xl pointer-events-auto">
                   <div className="bg-white border border-gray-200 shadow-xl rounded-2xl px-8 py-6 text-center">
                     <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
                       <svg className="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
@@ -805,7 +826,33 @@ const LivePanel = () => {
               )}
 
               {/* On-Canvas Question Edit */}
-              <div className="w-full relative mt-4">
+              <div 
+                className="absolute z-20 group border-2 border-transparent hover:border-indigo-400 rounded-lg pointer-events-auto mt-4"
+                style={{
+                  left: activeSlide.titleProps?.x ?? 40,
+                  top: activeSlide.titleProps?.y ?? 40,
+                  width: activeSlide.titleProps?.width ?? 600,
+                  minHeight: activeSlide.titleProps?.height ?? 100
+                }}
+                onMouseDown={(e) => {
+                  if (isReadonly || isEnded) return;
+                  if (e.target.tagName.toLowerCase() === 'div' && e.target.contentEditable === 'true') {
+                     // Let them click into it to edit
+                     if (document.activeElement === e.target) return;
+                  }
+                  const rect = e.currentTarget.parentNode.getBoundingClientRect();
+                  setDraggingImage({
+                    isTitle: true,
+                    offsetX: e.clientX - rect.left - (activeSlide.titleProps?.x ?? 40),
+                    offsetY: e.clientY - rect.top - (activeSlide.titleProps?.y ?? 40)
+                  });
+                }}
+              >
+                {!isReadonly && !isEnded && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded shadow-sm opacity-0 group-hover:opacity-100 cursor-move transition-opacity pointer-events-none">
+                    Drag text block
+                  </div>
+                )}
                 <ContentEditable
                   html={activeSlide.questionTitle}
                   disabled={isEnded || isReadonly}
@@ -813,9 +860,22 @@ const LivePanel = () => {
                   onFocus={() => setIsEditingTitleOnCanvas(true)}
                   onBlur={() => setIsEditingTitleOnCanvas(false)}
                   tagName="div"
-                  data-placeholder="Your question..."
-                  className={`w-full text-2xl md:text-4xl leading-tight font-semibold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0 empty:before:content-[attr(data-placeholder)] empty:before:text-gray-300 empty:before:pointer-events-none rich-text ${isEditingTitleOnCanvas ? 'ring-2 ring-indigo-500/50 rounded-xl bg-gray-50/50 py-2 text-center' : 'text-center'}`}
+                  data-placeholder={activeSlide.questionType === 'blank' ? "Click to add text..." : "Your question..."}
+                  className={`w-full h-full text-2xl md:text-4xl leading-tight font-semibold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0 empty:before:content-[attr(data-placeholder)] empty:before:text-gray-300 empty:before:pointer-events-none rich-text cursor-text ${isEditingTitleOnCanvas ? 'ring-2 ring-indigo-500/50 rounded-xl bg-gray-50/50 py-2 text-center' : 'text-center'}`}
                 />
+                {!isReadonly && !isEnded && (
+                  <div
+                    className="absolute bottom-0 right-0 w-4 h-4 bg-indigo-500 cursor-se-resize rounded-tl-md opacity-0 group-hover:opacity-100 pointer-events-auto"
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      setResizingImage({
+                        isTitle: true,
+                        imgX: activeSlide.titleProps?.x ?? 40,
+                        imgY: activeSlide.titleProps?.y ?? 40
+                      });
+                    }}
+                  />
+                )}
 
                 {/* Floating Formatting Toolbar (appears when editing) */}
                 {isEditingTitleOnCanvas && (
@@ -884,14 +944,14 @@ const LivePanel = () => {
                 {activeSlide.questionType === 'multiple_choice' && (
                   <>
                     {(previewChartType || activeSlide.chartType) === 'bar' && (
-                      <div className="w-full h-[200px] flex justify-around items-end gap-1 md:gap-3 mt-auto">
+                      <div className="w-full h-[250px] flex justify-center items-end gap-2 md:gap-4 mt-auto overflow-x-auto pb-2 custom-scrollbar">
                         {activeSlide.options.map((item, i) => {
                           const displayValue = (!isLive && !isEnded && item.value === 0) ? (i * 2 + 3) : item.value;
                           const maxDisplayValue = Math.max(...activeSlide.options.map((o, idx) => (!isLive && !isEnded && o.value === 0) ? (idx * 2 + 3) : o.value), 1);
                           const heightPercent = (displayValue / maxDisplayValue) * 100;
 
                           return (
-                            <div key={item.id} className="flex flex-col items-center flex-1 min-w-0 max-w-[120px] h-full justify-end relative group cursor-default">
+                            <div key={item.id} className="flex flex-col items-center flex-1 min-w-[60px] md:min-w-[80px] max-w-[120px] h-full justify-end relative group cursor-default">
                               <div className={`flex items-center gap-1.5 mb-2 transition-opacity duration-300 ${showCorrectAnswer ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                 <span className="text-xl md:text-2xl font-semibold text-gray-800">{displayValue}</span>
                                 {showCorrectAnswer && activeSlide.correctAnswer && (
@@ -910,7 +970,7 @@ const LivePanel = () => {
                                 className={`w-full rounded-t-sm mb-4 transition-all duration-700 ease-out shadow-sm origin-bottom ${showCorrectAnswer && activeSlide.correctAnswer && activeSlide.correctAnswer !== item.name ? 'opacity-30' : 'opacity-100'}`}
                                 style={{ backgroundColor: item.color, height: animateIn ? `${heightPercent}%` : '0%', minHeight: animateIn ? '4px' : '0px' }}
                               ></div>
-                              <span className="text-sm md:text-base text-gray-600 font-medium text-center w-full px-1 pb-2 leading-relaxed">{item.name}</span>
+                              <span className="text-sm md:text-base text-gray-600 font-medium text-center w-full px-1 pb-2 truncate whitespace-nowrap" title={item.name}>{item.name}</span>
                             </div>
                           );
                         })}
@@ -918,13 +978,13 @@ const LivePanel = () => {
                     )}
 
                     {(previewChartType || activeSlide.chartType) === 'dots' && (
-                      <div className="w-full h-[250px] flex justify-around items-end gap-1 md:gap-3 mt-auto">
+                      <div className="w-full h-[300px] flex justify-center items-end gap-2 md:gap-4 mt-auto overflow-x-auto pb-2 custom-scrollbar">
                         {activeSlide.options.map((item, i) => {
                           const displayValue = (!isLive && !isEnded && item.value === 0) ? (i * 2 + 3) : item.value;
                           const balls = Array.from({ length: displayValue });
 
                           return (
-                            <div key={item.id} className="flex flex-col items-center justify-end flex-1 min-w-0 max-w-[120px] relative group h-full">
+                            <div key={item.id} className="flex flex-col items-center justify-end flex-1 min-w-[60px] md:min-w-[80px] max-w-[120px] relative group h-full">
                               <div id={`dot-stack-base-${item.id}`} className="flex-1 w-full flex flex-wrap-reverse justify-center content-start gap-1 md:gap-1.5 overflow-visible">
                                 {balls.map((_, ballIndex) => (
                                   <div
@@ -954,7 +1014,7 @@ const LivePanel = () => {
                                     )
                                   )}
                                 </div>
-                                <span className="text-sm md:text-base text-gray-500 font-medium w-full px-1 text-center pb-2 leading-relaxed">{item.name}</span>
+                                <span className="text-sm md:text-base text-gray-500 font-medium w-full px-1 text-center pb-2 truncate whitespace-nowrap" title={item.name}>{item.name}</span>
                               </div>
                             </div>
                           );
@@ -1008,34 +1068,39 @@ const LivePanel = () => {
                 {/* --- RANKING VISUALIZATION --- */}
                 {activeSlide.questionType === 'ranking' && (
                   <div className="w-full flex flex-col justify-center px-4 md:px-10 pb-8 space-y-4 my-auto">
-                    <div className="w-full relative" style={{ height: `${activeSlide.options.length * 80}px` }}>
-                      {(() => {
-                        const sortedItems = [...activeSlide.options].map((opt, i) => ({
-                          ...opt,
-                          computedValue: (!isLive && !isEnded && opt.value === 0) ? (i === 0 ? 80 : i === 1 ? 65 : i === 2 ? 40 : 25) : opt.value
-                        })).sort((a, b) => b.computedValue - a.computedValue);
+                    {(() => {
+                      const rowHeight = Math.max(40, Math.min(80, 320 / (activeSlide.options.length || 1)));
+                      const barHeight = rowHeight * 0.6;
+                      
+                      return (
+                        <div className="w-full relative" style={{ height: `${activeSlide.options.length * rowHeight}px` }}>
+                          {(() => {
+                            const sortedItems = [...activeSlide.options].map((opt, i) => ({
+                              ...opt,
+                              computedValue: (!isLive && !isEnded && opt.value === 0) ? (i === 0 ? 80 : i === 1 ? 65 : i === 2 ? 40 : 25) : opt.value
+                            })).sort((a, b) => b.computedValue - a.computedValue);
 
-                        const maxVal = Math.max(...sortedItems.map(i => i.computedValue), 1);
+                            const maxVal = Math.max(...sortedItems.map(i => i.computedValue), 1);
 
-                        return activeSlide.options.map((item, i) => {
-                          const rankIndex = sortedItems.findIndex(i => i.id === item.id);
-                          const val = (!isLive && !isEnded && item.value === 0) ? (i === 0 ? 80 : i === 1 ? 65 : i === 2 ? 40 : 25) : item.value;
-                          const percent = (val / maxVal) * 100;
+                            return activeSlide.options.map((item, i) => {
+                              const rankIndex = sortedItems.findIndex(i => i.id === item.id);
+                              const val = (!isLive && !isEnded && item.value === 0) ? (i === 0 ? 80 : i === 1 ? 65 : i === 2 ? 40 : 25) : item.value;
+                              const percent = (val / maxVal) * 100;
 
-                          return (
-                            <div
-                              key={item.id}
-                              className="absolute left-0 w-full flex items-end gap-4 transition-all duration-700 ease-in-out group cursor-default"
-                              style={{ transform: `translateY(${rankIndex * 80}px)`, top: 0 }}
-                            >
-                              <span className="text-2xl font-bold text-gray-500 w-8 text-right shrink-0 mb-2">{rankIndex + 1}.</span>
-                              <div className="flex-1 flex flex-col justify-end h-[48px] relative mb-1">
-                                <div className="absolute top-[-26px] left-0 text-[16px] text-gray-600 font-medium z-10 transition-all">{item.name}</div>
-                                <div className="w-full h-full bg-gray-50 rounded-r-xl relative overflow-hidden">
-                                  <div
-                                    className="absolute top-0 left-0 h-full rounded-r-xl transition-all duration-700 ease-in-out flex items-center justify-end px-3"
-                                    style={{ width: `${Math.max(percent, 2)}%`, backgroundColor: item.color }}
-                                  >
+                              return (
+                                <div
+                                  key={item.id}
+                                  className="absolute left-0 w-full flex items-end gap-2 md:gap-4 transition-all duration-700 ease-in-out group cursor-default"
+                                  style={{ transform: `translateY(${rankIndex * rowHeight}px)`, top: 0 }}
+                                >
+                                  <span className="text-xl md:text-2xl font-bold text-gray-500 w-6 md:w-8 text-right shrink-0 mb-1">{rankIndex + 1}.</span>
+                                  <div className="flex-1 flex flex-col justify-end relative mb-1" style={{ height: `${barHeight}px` }}>
+                                    <div className="absolute left-0 text-xs md:text-[16px] text-gray-600 font-medium z-10 transition-all truncate max-w-[80%]" style={{ top: `-${barHeight * 0.6}px` }}>{item.name}</div>
+                                    <div className="w-full h-full bg-gray-50 rounded-r-xl relative overflow-hidden">
+                                      <div
+                                        className="absolute top-0 left-0 h-full rounded-r-xl transition-all duration-700 ease-in-out flex items-center justify-end px-3"
+                                        style={{ width: `${Math.max(percent, 2)}%`, backgroundColor: item.color }}
+                                      >
                                     <span className="text-white font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md">
                                       {val} pts
                                     </span>
@@ -1047,20 +1112,22 @@ const LivePanel = () => {
                         });
                       })()}
                     </div>
-                  </div>
+                  );
+                })()}
+                </div>
                 )}
 
                 {/* --- SCALES VISUALIZATION --- */}
                 {activeSlide.questionType === 'scales' && (
-                  <div className="w-full flex flex-col justify-center px-4 md:px-10 pb-8 mt-auto">
-                    <div className="space-y-5 w-full">
+                  <div className="w-full flex flex-col justify-end px-4 md:px-10 pb-4 mt-auto pt-16 h-[320px]">
+                    <div className="w-full h-full flex flex-col gap-2">
                       {activeSlide.options.map((item, i) => {
                         const val = (!isLive && !isEnded && item.value === 0) ? (i === 0 ? 3.5 : i === 1 ? 4.5 : 1.0) : item.value;
                         const percent = (val / 5) * 100;
                         return (
-                          <div key={item.id} className="w-full relative group cursor-default">
-                            <div className="text-gray-500 text-[15px] mb-1">{item.name || `Statement ${i + 1}`}</div>
-                            <div className="w-full relative h-14 flex items-center pb-1">
+                          <div key={item.id} className="w-full relative group cursor-default flex-1 min-h-[24px] flex flex-col justify-end">
+                            <div className="text-gray-500 text-xs md:text-[14px] mb-1 truncate">{item.name || `Statement ${i + 1}`}</div>
+                            <div className="w-full relative flex items-center pb-1 flex-1 max-h-[56px] min-h-[12px]">
                               {/* The Mountain Distribution */}
                               <svg viewBox="0 0 100 48" preserveAspectRatio="none" className="absolute bottom-2.5 left-0 w-full h-[110%]">
                                 <path
@@ -1084,6 +1151,12 @@ const LivePanel = () => {
                                   style={{ left: `${percent}%`, backgroundColor: item.color }}
                                 >
                                   {val.toFixed(1)}
+                                  
+                                  {/* Tooltip for vote count */}
+                                  <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {item.voteCount || 0} {(item.voteCount === 1) ? 'vote' : 'votes'}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[3px] border-r-[3px] border-t-[4px] border-transparent border-t-gray-800"></div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -1102,61 +1175,60 @@ const LivePanel = () => {
 
               {/* Slide Footer removed */}
 
-            </div>
+            </div> {/* End pointer-events-auto */}
+            </div> {/* End pointer-events-none (outer) */}
 
-            {/* Split Screen Image for Question Slides */}
-            {(activeSlide.imageUrl && activeSlide.questionType !== 'thankyou') && (
-              <div className="w-full md:w-1/2 h-64 md:h-full pt-6 md:pt-0 md:pl-6 relative flex items-center justify-center border-t md:border-t-0 md:border-l border-gray-100 shrink-0">
-                <img src={getProperImageUrl(activeSlide.imageUrl)} alt="Slide visual" className="max-w-full max-h-full object-contain rounded-xl shadow-sm" />
-              </div>
-            )}
 
-            {/* Draggable floating images for Thank You slide */}
-            {activeSlide.questionType === 'thankyou' && (
-              <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
-                {(slideImages[activeSlide.id] || []).map(img => (
-                  <div
-                    key={img.id}
-                    style={{ left: img.x, top: img.y, width: img.w, height: img.h }}
-                    className="absolute group border-2 border-transparent hover:border-indigo-400 rounded-lg cursor-move pointer-events-auto"
-                    onMouseDown={(e) => {
-                      const rect = e.currentTarget.parentNode.getBoundingClientRect();
-                      setDraggingImage({
-                        slideId: activeSlide.id,
-                        imageId: img.id,
-                        offsetX: e.clientX - rect.left - img.x,
-                        offsetY: e.clientY - rect.top - img.y
-                      });
-                    }}
-                  >
-                    <img src={`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}${img.url}`} className="w-full h-full object-cover rounded-md pointer-events-none" />
+            {/* Draggable Slide Image */}
+            {activeSlide.imageUrl && (
+              <div 
+                className="absolute group border-2 border-transparent hover:border-indigo-400 rounded-lg cursor-move pointer-events-auto z-0"
+                style={{
+                  left: activeSlide.imageProps?.x ?? 40,
+                  top: activeSlide.imageProps?.y ?? 40,
+                  width: activeSlide.imageProps?.width ?? 300,
+                  height: activeSlide.imageProps?.height ?? 300
+                }}
+                onMouseDown={(e) => {
+                  if (isReadonly || isEnded) return;
+                  const rect = e.currentTarget.parentNode.getBoundingClientRect();
+                  setDraggingImage({
+                    isPrimary: true,
+                    offsetX: e.clientX - rect.left - (activeSlide.imageProps?.x ?? 40),
+                    offsetY: e.clientY - rect.top - (activeSlide.imageProps?.y ?? 40)
+                  });
+                }}
+              >
+                <img src={getProperImageUrl(activeSlide.imageUrl)} alt="Slide visual" className="w-full h-full object-contain rounded-xl pointer-events-none drop-shadow-md" />
+                {!isReadonly && !isEnded && (
+                  <>
                     <div
                       className="absolute bottom-0 right-0 w-4 h-4 bg-indigo-500 cursor-se-resize rounded-tl-md opacity-0 group-hover:opacity-100 pointer-events-auto"
                       onMouseDown={(e) => {
                         e.stopPropagation();
-                        const rect = e.currentTarget.parentNode.parentNode.getBoundingClientRect();
                         setResizingImage({
-                          slideId: activeSlide.id,
-                          imageId: img.id,
-                          imgX: img.x,
-                          imgY: img.y
+                          isPrimary: true,
+                          imgX: activeSlide.imageProps?.x ?? 40,
+                          imgY: activeSlide.imageProps?.y ?? 40
                         });
                       }}
                     />
                     <button
-                      className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-auto"
+                      className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-auto shadow-md hover:bg-red-600 transition-colors"
+                      onMouseDown={(e) => {
+                        // Prevent drag starting on delete click
+                        e.stopPropagation();
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSlideImages(prev => ({
-                          ...prev,
-                          [activeSlide.id]: prev[activeSlide.id].filter(i => i.id !== img.id)
-                        }));
+                        const newSlides = slides.map(s => s.id === activeSlide.id ? { ...s, imageUrl: null } : s);
+                        setSlides(newSlides);
                       }}
                     >
-                      <X size={12} />
+                      <X size={12} strokeWidth={3} />
                     </button>
-                  </div>
-                ))}
+                  </>
+                )}
               </div>
             )}
 
@@ -1569,52 +1641,7 @@ const LivePanel = () => {
                   </div>
 
                   {/* Image Upload for Question */}
-                  {activeSlide.questionType === 'thankyou' ? (
-                    <div className="relative w-full mt-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        onChange={async (e) => {
-                          const file = e.target.files[0];
-                          if (!file) return;
-
-                          const formData = new FormData();
-                          formData.append('image', file);
-
-                          try {
-                            const token = localStorage.getItem('token');
-                            const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/upload`, {
-                              method: 'POST',
-                              headers: { 'Authorization': `Bearer ${token}` },
-                              body: formData
-                            });
-                            const data = await res.json();
-                            if (res.ok) {
-                              setSlideImages(prev => ({
-                                ...prev,
-                                [activeSlide.id]: [...(prev[activeSlide.id] || []), {
-                                  id: Date.now().toString(),
-                                  url: data.url,
-                                  x: 50, y: 50, w: 200, h: 200
-                                }]
-                              }));
-                            } else {
-                              console.error('Upload failed:', data.message);
-                            }
-                          } catch (err) {
-                            console.error('Error uploading image:', err);
-                          }
-                          e.target.value = '';
-                        }}
-                      />
-                      <button className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 py-2 rounded-lg transition-colors border border-emerald-100 border-dashed">
-                        <ImageIcon size={16} />
-                        <span className="text-sm font-medium">Add draggable image</span>
-                      </button>
-                    </div>
-                  ) : !activeSlide.imageUrl ? (
+                  {!activeSlide.imageUrl ? (
                     <div className="relative w-full mt-2">
                       <input
                         type="file"
@@ -1649,7 +1676,7 @@ const LivePanel = () => {
                       />
                       <button className="w-full flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 py-2 rounded-lg transition-colors border border-indigo-100 border-dashed">
                         <ImageIcon size={16} />
-                        <span className="text-sm font-medium">Add question image</span>
+                        <span className="text-sm font-medium">Add image</span>
                       </button>
                     </div>
                   ) : (
@@ -2180,11 +2207,46 @@ const LivePanel = () => {
               </div>
 
               {/* Mobile Content Scrollable */}
-              <div className="flex-1 overflow-y-auto p-6 pb-20 custom-scrollbar">
-                <h2
-                  className="text-xl font-bold text-gray-800 leading-tight mb-6 rich-text"
-                  dangerouslySetInnerHTML={{ __html: activeSlide.questionTitle || 'Untitled question' }}
-                />
+              <div className="flex-1 overflow-y-auto p-6 pb-20 custom-scrollbar relative">
+                {!isLive && waitingRoom.enabled ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-center -mt-6">
+                    {waitingRoom.template === 'default' ? (
+                       <div className="w-16 h-16 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center mx-auto mb-4 relative">
+                         <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
+                         <Radio size={24} className="text-indigo-600" />
+                       </div>
+                    ) : waitingRoom.template === 'modern' ? (
+                       <div className="w-full flex flex-col items-center gap-4">
+                         <h1 className="text-2xl font-bold text-slate-900 leading-tight">Hi there,<br/>we're almost ready!</h1>
+                         <div className="text-sm bg-slate-50 border border-slate-100 p-3 w-full rounded-xl mt-4 flex items-center justify-center gap-2 text-slate-600"><MessageSquare size={16}/> Live chat available</div>
+                       </div>
+                    ) : (
+                       <div className="w-full flex flex-col items-center gap-4">
+                         <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 drop-shadow-sm">Get Ready!</h1>
+                         <div className="flex justify-center gap-3 mt-4">
+                           {[{id:1, c:'text-rose-500'}, {id:2, c:'text-blue-500'}, {id:3, c:'text-amber-500'}].map(e=>(
+                             <div key={e.id} className={`w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center ${e.c}`}><Smile size={24}/></div>
+                           ))}
+                         </div>
+                       </div>
+                    )}
+                    <p className="text-slate-500 text-sm mt-8 font-medium bg-slate-50 px-3 py-1 rounded-full border border-slate-100">Waiting screen preview</p>
+                  </div>
+                ) : (
+                  <>
+                    {activeSlide.imageUrl && (
+                      <div className="w-full flex justify-center mb-4">
+                        <img 
+                          src={getProperImageUrl(activeSlide.imageUrl)} 
+                          alt="Question Visual" 
+                          className="max-w-full max-h-48 object-contain rounded-xl shadow-sm border border-slate-100" 
+                        />
+                      </div>
+                    )}
+                    <h2
+                      className="text-xl font-bold text-gray-800 leading-tight mb-6 rich-text text-center"
+                      dangerouslySetInnerHTML={{ __html: activeSlide.questionTitle || 'Untitled question' }}
+                    />
 
                 {/* Mobile Multiple Choice */}
                 {activeSlide.questionType === 'multiple_choice' && (
@@ -2349,6 +2411,8 @@ const LivePanel = () => {
                     )}
                   </div>
                 )}
+                  </>
+                )}
               </div>
 
               {/* Mobile Scroll indicator fade */}
@@ -2439,6 +2503,78 @@ const LivePanel = () => {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Waiting Room Config Modal */}
+        {isWaitingRoomModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+            onClick={() => setIsWaitingRoomModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl max-w-lg w-full relative flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              <button onClick={() => setIsWaitingRoomModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition-colors">
+                <X size={18} />
+              </button>
+              
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                  <Clock size={22} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">Waiting Screen</h2>
+                  <p className="text-sm text-slate-500">Engage participants before you start.</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-6">
+                <div>
+                  <div className="font-semibold text-slate-800">Enable Custom Waiting Screen</div>
+                  <div className="text-sm text-slate-500">Turn on live chat and emoji reactions</div>
+                </div>
+                <button 
+                  onClick={() => {
+                    setWaitingRoom(prev => ({ ...prev, enabled: !prev.enabled }));
+                    savePoll();
+                  }}
+                  className={`w-12 h-6 rounded-full transition-colors relative ${waitingRoom.enabled ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                >
+                  <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${waitingRoom.enabled ? 'translate-x-6' : ''}`} />
+                </button>
+              </div>
+
+              {waitingRoom.enabled && (
+                <div className="space-y-3">
+                  <div className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-2">Select Theme</div>
+                  
+                  {[
+                    { id: 'default', name: 'Default', desc: 'Simple loading spinner' },
+                    { id: 'modern', name: 'Modern Chat', desc: 'Split screen with live chat' },
+                    { id: 'playful', name: 'Playful Emojis', desc: 'Floating emoji bubbles' }
+                  ].map(theme => (
+                    <button
+                      key={theme.id}
+                      onClick={() => {
+                        setWaitingRoom(prev => ({ ...prev, template: theme.id }));
+                        setTimeout(savePoll, 50); // Auto save
+                      }}
+                      className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${waitingRoom.template === theme.id ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-100 bg-white hover:border-indigo-200'}`}
+                    >
+                      <div className="flex flex-col text-left">
+                        <span className={`font-semibold ${waitingRoom.template === theme.id ? 'text-indigo-700' : 'text-slate-700'}`}>{theme.name}</span>
+                        <span className="text-sm text-slate-500">{theme.desc}</span>
+                      </div>
+                      {waitingRoom.template === theme.id && <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-white"><Check size={14} /></div>}
+                    </button>
+                  ))}
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}

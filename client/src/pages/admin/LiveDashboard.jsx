@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Filter, Play, Radio, Users, Edit2, Trash2, Link as LinkIcon, QrCode, X, Copy, Eye } from 'lucide-react';
+import { Plus, Search, Filter, Play, Radio, Users, Edit2, Trash2, Link as LinkIcon, QrCode, X, Copy, Eye, Repeat } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { io } from 'socket.io-client';
@@ -38,13 +38,12 @@ const LiveDashboard = () => {
     const fetchPolls = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
           const data = await res.json();
-          // Filter for only live polls
-          setPolls(data.filter(s => s.type === 'live'));
+          setPolls(data);
         }
       } catch (err) {
         console.error('Failed to fetch live polls', err);
@@ -58,15 +57,14 @@ const LiveDashboard = () => {
   const createLivePoll = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          title: 'Untitled Live Poll',
-          type: 'live',
+          title: 'Untitled Live Poll'
         })
       });
       
@@ -91,7 +89,7 @@ const LiveDashboard = () => {
     if (!window.confirm('Are you sure you want to delete this live poll?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -106,7 +104,7 @@ const LiveDashboard = () => {
   const startPoll = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -127,7 +125,7 @@ const LiveDashboard = () => {
     try {
       const pollToStop = polls.find(p => p._id === id);
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/surveys/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -143,6 +141,22 @@ const LiveDashboard = () => {
       console.error('Failed to end poll', err);
       const pollToStop = polls.find(p => p._id === id);
       if (pollToStop) socket.emit('admin-stop-poll', pollToStop.surveyCode);
+    }
+  };
+
+  const reusePoll = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls/${id}/duplicate`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        navigate(`/admin/live/builder/${data._id}`);
+      }
+    } catch (err) {
+      console.error('Failed to duplicate poll', err);
     }
   };
 
@@ -293,6 +307,9 @@ const LiveDashboard = () => {
                           </button>
                         </>
                       )}
+                      <button onClick={() => reusePoll(poll._id)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Reuse Poll">
+                        <Repeat size={18} />
+                      </button>
                       <button onClick={() => deletePoll(poll._id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
                         <Trash2 size={18} />
                       </button>

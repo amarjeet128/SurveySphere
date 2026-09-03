@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { Radio, GripVertical } from 'lucide-react';
+import WaitingRoom from '../../components/WaitingRoom';
 
 const socket = io(import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com');
 
@@ -165,8 +166,39 @@ const LiveView = () => {
   const [hasJoined, setHasJoined] = useState(() => sessionStorage.getItem('live_joined') === 'true');
   const [nameInput, setNameInput] = useState(() => sessionStorage.getItem('live_name') || '');
   const [votedQuestionTitle, setVotedQuestionTitle] = useState(() => sessionStorage.getItem('live_voted_title') || null);
+  const [waitingRoomConfig, setWaitingRoomConfig] = useState(null);
+  const [emojiAnimations, setEmojiAnimations] = useState([]);
   
   const hasVoted = liveState.question?.title && liveState.question.title === votedQuestionTitle;
+
+  useEffect(() => {
+    if (code) {
+      fetch(`${import.meta.env.VITE_API_URL || 'https://surveysphere-backend-boib.onrender.com'}/api/livepolls/code/${code}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.waitingRoom) {
+            setWaitingRoomConfig(data.waitingRoom);
+          }
+        })
+        .catch(err => console.error("Error fetching poll config:", err));
+    }
+  }, [code]);
+
+  useEffect(() => {
+    socket.on('emoji-reaction-received', ({ emoji }) => {
+      const animationId = Date.now() + Math.random();
+      setEmojiAnimations(prev => [...prev, {
+        id: animationId,
+        emoji,
+        startX: Math.random() * window.innerWidth
+      }]);
+      setTimeout(() => {
+        setEmojiAnimations(prev => prev.filter(anim => anim.id !== animationId));
+      }, 3500);
+    });
+
+    return () => socket.off('emoji-reaction-received');
+  }, []);
 
   useEffect(() => {
     socket.on('live-state-update', (state) => {
@@ -240,6 +272,18 @@ const LiveView = () => {
     }
   };
 
+  const handleSendMessage = (text) => {
+    if (code && participantName) {
+      socket.emit('chat-message', { code, sender: participantName, text });
+    }
+  };
+
+  const handleEmojiClick = (emoji) => {
+    if (code) {
+      socket.emit('emoji-reaction', { code, emoji });
+    }
+  };
+
   const renderQuestionInput = () => {
     const type = liveState.question?.type;
     const options = liveState.question?.options || [];
@@ -253,6 +297,9 @@ const LiveView = () => {
         return <RankingInput options={options} onSubmit={handleVote} />;
       case 'q_and_a':
         return <QandAInput onSubmit={handleVote} />;
+      case 'blank':
+      case 'thankyou':
+        return null;
       case 'multiple_choice':
       default:
         return <MultipleChoiceInput options={options} onSubmit={handleVote} />;
@@ -307,25 +354,23 @@ const LiveView = () => {
             <p className="text-slate-500 text-lg">The poll has ended. You may now close this window.</p>
           </motion.div>
         ) : !liveState.isActive ? (
-          <motion.div 
+          <WaitingRoom 
             key="waiting"
-            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-            className="text-center"
-          >
-            <div className="w-24 h-24 rounded-full bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-center mx-auto mb-8 relative">
-              <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
-              <Radio size={40} className="text-indigo-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome, {participantName}!</h1>
-            <p className="text-slate-500 text-lg">Waiting for the presenter to start the poll...</p>
-          </motion.div>
+            config={waitingRoomConfig}
+            participantName={participantName}
+            participantsCount={liveState.participants?.length || 0}
+            chatMessages={liveState.chatMessages || []}
+            onSendMessage={handleSendMessage}
+            onEmojiClick={handleEmojiClick}
+            activeAnimations={emojiAnimations}
+          />
         ) : (
           <motion.div 
             key={liveState.question?.title || 'voting'}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-            className={`w-full ${liveState.question?.imageUrl ? 'max-w-5xl flex flex-col md:flex-row gap-8 md:gap-12 items-center' : 'max-w-xl'}`}
+            className={`w-full ${liveState.question?.imageUrl ? 'max-w-5xl flex flex-col md:flex-row gap-8 md:gap-12 items-center' : 'max-w-xl flex flex-col items-center gap-6'}`}
           >
-            <div className={`w-full ${liveState.question?.imageUrl ? 'md:w-1/2' : ''}`}>
+            <div className={`w-full ${liveState.question?.imageUrl ? 'md:w-1/2 text-left' : 'text-center'}`}>
               <div className="mb-4 inline-block bg-indigo-50 border border-indigo-100 px-4 py-1.5 rounded-full text-indigo-700 font-semibold text-sm">
                 {liveState.question?.pollName || 'Live Poll'}
               </div>
@@ -337,7 +382,7 @@ const LiveView = () => {
               {!hasVoted ? renderQuestionInput() : (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                  className="bg-white p-12 rounded-3xl text-center border border-slate-100 shadow-sm"
+                  className="bg-white p-12 rounded-3xl text-center border border-slate-100 shadow-sm w-full"
                 >
                   <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30">
                     <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
@@ -349,7 +394,7 @@ const LiveView = () => {
             </div>
 
             {liveState.question?.imageUrl && (
-              <div className="w-full md:w-1/2 flex justify-center">
+              <div className="w-full md:w-1/2 flex justify-center mt-6 md:mt-0">
                 <img 
                   src={getProperImageUrl(liveState.question.imageUrl)} 
                   alt="Question Visual" 
